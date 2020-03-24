@@ -171,18 +171,26 @@ def train_back_up():
 
         test_loss = trainer.test(epoch)
 
+        if epoch>=args.entropy_start_point:
+            if best_loss is None or best_loss>test_loss:
+                best_loss=test_loss
+                tolerance=3
+
+            else:
+                tolerance-=1
+
         trainer.save(epoch, os.path.join(
             output_folder, args.output_path))
-
 
         with open(os.path.join(output_folder, './results.txt'), 'a') as fout:
             json.dump({"epoch": epoch,
                        "loss": test_loss}, fout)
             fout.write('\n')
 
-
         torch.cuda.empty_cache()
-
+        if tolerance==0:
+            break
+    print('Best loss:',best_loss)
 
 
 train_back_up()
