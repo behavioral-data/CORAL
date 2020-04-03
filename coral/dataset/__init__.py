@@ -1,3 +1,2 @@
-# from .dataset import BERTDataset
-# from .vocab import WordVocab
-from .prepare_data import DataReader, Vocab, MarkdownVocab, SNAPVocab, CustomBERTDataset, my_collate, temp_collate, AnnotationVocab, UnitedVocab, TempDataset, SNAPDataset
+from .dataset import DataReader, my_collate, SNAPDataset
+from .vocab import SNAPVocab, UnitedVocab

@@ -40,16 +40,15 @@ class BERT(nn.Module):
         self.layernorm = LayerNorm(hidden)
 
     def forward(self, x, segment_info, adj_mat, train):
-        # pdb.set_trace()
+
         # attention masking for padded token
         # torch.ByteTensor([batch_size, 1, seq_len, seq_len)
         # mask = (x > 0).unsqueeze(1).repeat(1, x.size(1), 1).unsqueeze(1)
         mask = adj_mat
         # embedding the indexed sequence to sequence of vectors
-        # if not train:
-        #     pdb.set_trace()
+
         x = self.embedding(x, segment_info, train)
-        # x = self.layernorm(x)
+
         # running over multiple transformer blocks
         for transformer in self.transformer_blocks:
             x = transformer.forward(x, mask, train)

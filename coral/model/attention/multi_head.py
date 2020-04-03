@@ -33,7 +33,6 @@ class MultiHeadedAttention(nn.Module):
                              for l, x in zip(self.linear_layers, (query, key, value))]
         mask = mask.unsqueeze(1).repeat(1, self.h, 1, 1)
         # 2) Apply attention on all the projected vectors in batch.
-        # 有问题
 
         x, attn = self.attention(
             query, key, value, mask=mask, dropout=self.dropout, train=train)

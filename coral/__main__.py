@@ -9,16 +9,12 @@ import argparse
 from torch.utils.data import DataLoader
 
 from model import BERT
-from trainer import TempTrainer
-from dataset import DataReader, Vocab, temp_collate, UnitedVocab, SNAPVocab, SNAPDataset
+from trainer import CORALTrainer
+from dataset import DataReader, my_collate, UnitedVocab, SNAPVocab, SNAPDataset
 import pdb
 import os
 import json
-
 import torch
-
-
-
 
 
 def train_back_up():
@@ -136,13 +132,13 @@ def train_back_up():
     # pdb.set_trace()
     print("Creating Dataloader")
     train_data_loader = DataLoader(
-        train_dataset, batch_size=args.batch_size, num_workers=args.num_workers, collate_fn=temp_collate)
+        train_dataset, batch_size=args.batch_size, num_workers=args.num_workers, collate_fn=my_collate)
 
     test_data_loader = DataLoader(
-        test_dataset, batch_size=args.batch_size, num_workers=args.num_workers, collate_fn=temp_collate)  # \
+        test_dataset, batch_size=args.batch_size, num_workers=args.num_workers, collate_fn=my_collate)  # \
 
     labeled_data_loader = DataLoader(
-        labeled_dataset, batch_size=args.batch_size, num_workers=args.num_workers, collate_fn=temp_collate)
+        labeled_dataset, batch_size=args.batch_size, num_workers=args.num_workers, collate_fn=my_collate)
 
 # labeled_data_loader 的 bert input 每次不一样，应该是vocab的问题
 
@@ -154,8 +150,8 @@ def train_back_up():
 
     print("Creating BERT Trainer")
 
-    trainer = TempTrainer(bert, len(vocab), train_dataloader=train_data_loader, test_dataloader=test_data_loader,
-                          lr=args.lr, betas=(
+    trainer = CORALTrainer(bert, len(vocab), train_dataloader=train_data_loader, test_dataloader=test_data_loader,
+                           lr=args.lr, betas=(
         args.adam_beta1, args.adam_beta2), weight_decay=args.adam_weight_decay,
         with_cuda=args.with_cuda, cuda_devices=args.cuda_devices, log_freq=args.log_freq, pad_index=vocab.pad_index, model_path=args.model_path, weak_supervise=args.weak_supervise, context=args.context, markdown=args.markdown, hinge_loss_start_point=args.hinge_loss_start_point, entropy_start_point=args.entropy_start_point)
     # raise NotImplementedError
@@ -171,13 +167,13 @@ def train_back_up():
 
         test_loss = trainer.test(epoch)
 
-        if epoch>=args.entropy_start_point:
-            if best_loss is None or best_loss>test_loss:
-                best_loss=test_loss
-                tolerance=3
+        if epoch >= args.entropy_start_point:
+            if best_loss is None or best_loss > test_loss:
+                best_loss = test_loss
+                tolerance = 3
 
             else:
-                tolerance-=1
+                tolerance -= 1
 
         trainer.save(epoch, os.path.join(
             output_folder, args.output_path))
@@ -188,10 +184,9 @@ def train_back_up():
             fout.write('\n')
 
         torch.cuda.empty_cache()
-        if tolerance==0:
+        if tolerance == 0:
             break
-    print('Best loss:',best_loss)
+    print('Best loss:', best_loss)
 
 
 train_back_up()
-

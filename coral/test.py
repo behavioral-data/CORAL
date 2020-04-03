@@ -1,16 +1,15 @@
 # coding=utf-8
 # created by Ge Zhang, Jan 29, 2020
 #
-# test for markdown
-# delete
+# test model performance
 
 import argparse
 
 from torch.utils.data import DataLoader
 
 from model import BERT
-from trainer import TempTrainer
-from dataset import DataReader, Vocab, temp_collate, UnitedVocab, SNAPVocab, SNAPDataset
+from trainer import CORALTrainer
+from dataset import DataReader, my_collate, UnitedVocab, SNAPVocab, SNAPDataset
 import pdb
 import os
 import json
@@ -18,7 +17,7 @@ import json
 import torch
 
 
-def hold_out_seeds():
+def test():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-c", "--dataset", required=True,
@@ -132,13 +131,13 @@ def hold_out_seeds():
     # pdb.set_trace()
     print("Creating Dataloader")
     train_data_loader = DataLoader(
-        train_dataset, batch_size=args.batch_size, num_workers=args.num_workers, collate_fn=temp_collate)
+        train_dataset, batch_size=args.batch_size, num_workers=args.num_workers, collate_fn=my_collate)
 
     test_data_loader = DataLoader(
-        test_dataset, batch_size=args.batch_size, num_workers=args.num_workers, collate_fn=temp_collate)  # \
+        test_dataset, batch_size=args.batch_size, num_workers=args.num_workers, collate_fn=my_collate)  # \
 
     labeled_data_loader = DataLoader(
-        labeled_dataset, batch_size=args.batch_size, num_workers=args.num_workers, collate_fn=temp_collate)
+        labeled_dataset, batch_size=args.batch_size, num_workers=args.num_workers, collate_fn=my_collate)
 
     # if test_dataset is not None else None
     # assert False
@@ -148,8 +147,8 @@ def hold_out_seeds():
 
     print("Creating BERT Trainer")
     # pdb.set_trace()
-    trainer = TempTrainer(bert, len(vocab), train_dataloader=train_data_loader, test_dataloader=test_data_loader,
-                          lr=args.lr, betas=(
+    trainer = CORALTrainer(bert, len(vocab), train_dataloader=train_data_loader, test_dataloader=test_data_loader,
+                           lr=args.lr, betas=(
         args.adam_beta1, args.adam_beta2), weight_decay=args.adam_weight_decay,
         with_cuda=args.with_cuda, cuda_devices=args.cuda_devices, log_freq=args.log_freq, pad_index=vocab.pad_index, model_path=args.model_path, weak_supervise=args.weak_supervise, context=args.context, markdown=args.markdown, hinge_loss_start_point=args.hinge_loss_start_point, entropy_start_point=args.entropy_start_point)
     # raise NotImplementedError
@@ -168,7 +167,7 @@ def hold_out_seeds():
         else:
             pass
     accuracy = correct / (len(stages) - zero_cells)
-    print(zero_cells)
+    print(zero_cells, 'cells are [PAD]')
     print('Accuracy:', accuracy)
 
     with open(os.path.join(output_folder, 'test_graphs.txt'), 'w') as fout:
@@ -180,5 +179,5 @@ def hold_out_seeds():
 
     return
 
-hold_out_seeds()
 
+test()
