@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 
 from model import BERT
 from trainer import CORALTrainer
-from dataset import DataReader, my_collate, UnitedVocab, SNAPVocab, SNAPDataset
+from dataset import DataReader, my_collate, UnitedVocab, SNAPDataset
 import pdb
 import os
 import json
@@ -102,13 +102,13 @@ def test():
         args.test_path, use_sub_token=args.use_sub_token)
 
     print("Loading Vocab")
-    if args.markdown:
-        vocab = UnitedVocab(data_reader.graphs, min_occur=args.min_occur,
+    # if args.markdown:
+    vocab = UnitedVocab(data_reader.graphs, min_occur=args.min_occur,
                             use_sub_token=args.use_sub_token, path=args.vocab_path)
 
-    else:
-        vocab = SNAPVocab(data_reader.graphs, min_occur=args.min_occur,
-                          use_sub_token=args.use_sub_token)
+    # else:
+    #     vocab = SNAPVocab(data_reader.graphs, min_occur=args.min_occur,
+                          # use_sub_token=args.use_sub_token)
 
     print("Vocab Size: ", len(vocab))
 
