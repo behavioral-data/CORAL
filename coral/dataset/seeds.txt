@@ -1,4 +1,3 @@
-# coding=utf-8
 # created by Ge Zhang, Jan 31 2020
 #
 #
@@ -101,7 +100,6 @@ explore_funcs = ['seaborn.distplot',
                  'seaborn.pairplot', 'seaborn.lmplot']
 
 model_funcs = ['sklearn.cluster.KMeans',
-
                'sklearn.svm.SVC',
                'tensorflow.Session']
 evaluate_funcs = ['sklearn.cross_validation.cross_val_score',

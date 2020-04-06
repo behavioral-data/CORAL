@@ -8,7 +8,9 @@ from tqdm import tqdm
 
 
 def get_vocab_from_counter(counter, min_occur, max_size):
-
+    """
+    sort vocab and truncate it based on frequency
+    """
     selected_tokens = [w for w in counter if counter[w] >= min_occur]
     selected_tokens = list(
         sorted(selected_tokens, key=lambda x: -counter[x]))
