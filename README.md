@@ -1,17 +1,23 @@
 # CORAL
 
-![GitHub issues](https://img.shields.io/github/issues/codertimo/BERT-pytorch.svg)
-[![GitHub stars](https://img.shields.io/github/stars/codertimo/BERT-pytorch.svg)](https://github.com/codertimo/BERT-pytorch/stargazers)
-[![CircleCI](https://circleci.com/gh/codertimo/BERT-pytorch.svg?style=shield)](https://circleci.com/gh/codertimo/BERT-pytorch)
-[![PyPI](https://img.shields.io/pypi/v/bert-pytorch.svg)](https://pypi.org/project/bert_pytorch/)
-[![PyPI - Status](https://img.shields.io/pypi/status/bert-pytorch.svg)](https://pypi.org/project/bert_pytorch/)
-[![Documentation Status](https://readthedocs.org/projects/bert-pytorch/badge/?version=latest)](https://bert-pytorch.readthedocs.io/en/latest/?badge=latest)
-
-Pytorch implementation of CORAL, with simple annotation
+Pytorch implementation of CORAL, with simple annotation.
 
 > CORAL: COde RepresentAtion Learning with Weakly-Supervised Transformers for Analyzing Data Analysis
 
 ## Introduction
+This repo is implementation of CORAL. Code is easy to understand. Some of the these codes are based on [BERT](https://github.com/codertimo/BERT-pytorch).   
 
 ## Quickstart
+#### Your corpus should be prepared with a code snippet and its parsed AST. See examples in `./examples`.
+#### You could generate your own AST with scripts from [py-150k](https://eth-sri.github.io/py150). 
+
+### 1. Train your own CORAL
+```
+./train.sh
+```
+### 2. Test CORAL
+```
+./test.sh
+```
+
 
