@@ -38,4 +38,4 @@ We make the annotated test dataset publicly available at `./examples/test.txt`. 
 You could also find all the labels in `id2stages.json` and create your own dataset.
 
 ### 3. Weak supervision starts before unsupervised topic model
-To help the model converge faster, we add unsupervised topic model 1 epoch after weak supervision starts. You could explore this by changing `hinge_loss_start_point` in `train.sh`.
+To help the model converge faster, we add unsupervised topic model 1 epoch after weak supervision starts. You could explore this with different values of `--hinge_loss_start_point` in `train.sh`.
