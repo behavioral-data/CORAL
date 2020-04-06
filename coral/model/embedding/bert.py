@@ -2,7 +2,6 @@ import torch.nn as nn
 from .token import TokenEmbedding
 from .position import PositionalEmbedding
 from .segment import SegmentEmbedding
-import pdb
 
 
 class BERTEmbedding(nn.Module):
@@ -37,13 +36,9 @@ class BERTEmbedding(nn.Module):
     #     self.position.weight.data.zero_()
     #     self.segment.weight.data.uniform_(-initrange, initrange)
 
-    def forward(self, sequence, segment_label, train=True):
+    def forward(self, sequence, segment_label):
         x = self.token(sequence) + self.position(sequence) + \
             self.segment(segment_label)
-        # if train:
-        #     x = x * (1 - self.dropout.p)
-        # pdb.set_trace()
         x = self.layernorm(x)
-        # if not train:
-        #     pdb.set_trace()
+
         return self.dropout(x)

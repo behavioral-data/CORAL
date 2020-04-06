@@ -1,8 +1,6 @@
 import torch.nn as nn
 from .single import Attention
 
-import pdb
-
 
 class MultiHeadedAttention(nn.Module):
     """
@@ -24,8 +22,8 @@ class MultiHeadedAttention(nn.Module):
 
         self.dropout = nn.Dropout(p=dropout)
 
-    def forward(self, query, key, value, mask=None, train=False):
-        # pdb.set_trace()
+    def forward(self, query, key, value, mask=None):
+
         batch_size = query.size(0)
 
         # 1) Do all the linear projections in batch from d_model => h x d_k
@@ -35,7 +33,7 @@ class MultiHeadedAttention(nn.Module):
         # 2) Apply attention on all the projected vectors in batch.
 
         x, attn = self.attention(
-            query, key, value, mask=mask, dropout=self.dropout, train=train)
+            query, key, value, mask=mask, dropout=self.dropout)
 
         # 3) "Concat" using a view and apply a final linear.
         x = x.transpose(1, 2).contiguous().view(
