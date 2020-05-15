@@ -10,7 +10,7 @@ We present a new classification task for labeling computational notebook cells a
 
 We have shown that CORAL, leveraging only easily-available weak supervision, achieves a 35% increase in accuracy over expert-supplied heuristics. Our model enables us to examine a set of 118,000 Jupyter Notebooks to uncover common data analysis patterns.
 
-This repo is implementation of CORAL. Some code is based on a previous implementation of BERT in pytorch. [BERT](https://github.com/codertimo/BERT-pytorch).   
+This repo is implementation of CORAL. Some code is based on a previous implementation of BERT in pytorch: [BERT](https://github.com/codertimo/BERT-pytorch).   
 
 ## Quickstart
 ### 1. Prepare Dataset
