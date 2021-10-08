@@ -8,12 +8,38 @@ import argparse
 from torch.utils.data import DataLoader
 
 from model import BERT
-from trainer import CORALTrainer
+from trainer import CORALTrainer, BaselineTrainer
 from dataset import DataReader, my_collate, UnitedVocab, CORALDataset
 
 import os
 import json
 import torch
+
+
+from gensim.models import Word2Vec
+import tqdm
+
+def train_word2vec_on_bert_input(vocab,data_loader, min_occur = 3):
+    print("Training Word2Vec")
+    print("--- Loading Data:")
+    data_iter = tqdm.tqdm(enumerate(data_loader),
+                            total=len(data_loader),
+                            bar_format="{l_bar}{r_bar}")
+
+
+    sentences = []
+    for i, item in data_iter:
+        data = item[0]
+        ndata = item[1]
+        sentence_tensor = data["bert_input"]
+        for item in sentence_tensor:
+            tokens  = [vocab.idx2word[x] for x in item]
+            sentences.append(tokens)
+    
+    print("--- Training...")
+    model = Word2Vec(sentences,min_count = min_occur)
+    return model
+
 
 
 def train():
@@ -55,7 +81,7 @@ def train():
                         help="printing loss every n iter: setting n")
 
     parser.add_argument("--cuda_devices", type=str,
-                        default='0', help="CUDA device ids")
+                        default='1', help="CUDA device ids")
     parser.add_argument("--max_graph_num", type=int, default=3000000,
                         help="printing loss every n iter: setting n")
     parser.add_argument("--vocab_path",
@@ -70,6 +96,10 @@ def train():
                         default=3, help="minimum of occurrence")
     parser.add_argument("--use_sub_token", action="store_true")
     parser.add_argument("--markdown", action="store_true", help="use markdown")
+    
+    parser.add_argument("--train_word2vec", action="store_true")
+    parser.add_argument("--word2vec_path",type=str)
+    
     args = parser.parse_args()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.cuda_devices
@@ -112,15 +142,16 @@ def train():
     labeled_data_loader = DataLoader(
         labeled_dataset, batch_size=args.batch_size, num_workers=args.num_workers, collate_fn=my_collate)
 
-    print("Building CORAL model")
-    bert = BERT(len(vocab), hidden=args.hidden,
-                n_layers=args.layers, attn_heads=args.attn_heads, dropout=args.dropout)
+    print("Making Word2Vec")
+    word2vec = train_word2vec_on_bert_input(vocab,train_data_loader,min_occur=args.min_occur)
+    
+    test_dataset.word2vec = word2vec
+    train_dataset.word2vec = word2vec
 
-    print("Creating CORAL Trainer")
-
-    trainer = CORALTrainer(bert, train_dataloader=train_data_loader, test_dataloader=test_data_loader,
-                           lr=args.lr,
-                           with_cuda=args.with_cuda, cuda_devices=args.cuda_devices, log_freq=args.log_freq, model_path=args.model_path, n_topics=args.n_topics, hinge_loss_start_point=args.hinge_loss_start_point, entropy_start_point=args.entropy_start_point)
+    print("Creating Baseline Trainer")
+    trainer = BaselineTrainer(word2vec, vocab, train_dataloader=train_data_loader, test_dataloader=test_data_loader,
+                                lr=args.lr,
+                            with_cuda=args.with_cuda, cuda_devices=args.cuda_devices, log_freq=args.log_freq, model_path=args.model_path, n_topics=args.n_topics, hinge_loss_start_point=args.hinge_loss_start_point, entropy_start_point=args.entropy_start_point)
 
     print("Parameters are in {}".format(
         os.path.join(output_folder, './setting.json')))

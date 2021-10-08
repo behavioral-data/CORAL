@@ -6,6 +6,8 @@ import os
 import json
 from tqdm import tqdm
 
+from gensim.models import Word2Vec
+
 
 def get_vocab_from_counter(counter, min_occur, max_size):
     """
@@ -22,6 +24,7 @@ def get_vocab_from_counter(counter, min_occur, max_size):
     return idx2word, word2idx
 
 
+
 class AnnotationVocab(object):
     """
     vocab for Markdown
@@ -32,12 +35,16 @@ class AnnotationVocab(object):
 
         self.min_occur = min_occur
         self.max_size = max_size
+        self.sentences = []
 
         counter = {}
         for g in tqdm(graphs):
+
             header = g["annotation"][-1] if len(g["annotation"]) > 0 else ""
             token = [t.lower() for t in header.split() if t]
+            self.sentences.append(token)
             for t in token:
+
                 if t not in counter:
                     counter[t] = 0
                 counter[t] += 1
@@ -58,15 +65,22 @@ class CodeVocab(object):
     """
 
     def __init__(self, graphs, use_sub_token=False, min_occur=3, max_size=10000):
+
         super(CodeVocab, self).__init__()
 
         self.use_sub_token = use_sub_token
         self.min_occur = min_occur
         self.max_size = max_size
-
+        
+        #TODO: This will use lots of memory, could be optimised
+        self.sentences = []
         counter = {}
+
+
         for g in tqdm(graphs):
+            sentence = []
             if use_sub_token:
+                sentence = g["new_nodes"]
                 for n in g["new_nodes"]:
                     if n not in counter:
                         counter[n] = 0
@@ -74,9 +88,11 @@ class CodeVocab(object):
             else:
                 for n in g["nodes"]:
                     token = n["type"] if "value" not in n else n["value"]
+                    sentence.append(token)
                     if token not in counter:
                         counter[token] = 0
                     counter[token] += 1
+            self.sentences.append(sentence)
 
         idx2word, word2idx = get_vocab_from_counter(
             counter, min_occur, max_size)
@@ -99,7 +115,8 @@ class UnitedVocab(object):
     sep_index = 4
     eos_index = 5
 
-    def __init__(self, graphs, use_sub_token=False, min_occur=3, path=None):
+    def __init__(self, graphs, use_sub_token=False, min_occur=3, path=None, 
+                word2vec = False, word2vec_path = None):
         super(UnitedVocab, self).__init__()
         self.pad_index = 0
         self.unk_index = 1
@@ -122,18 +139,29 @@ class UnitedVocab(object):
             idx2word = ["[PAD]", "[UNK]", "[MASK]", "[CLS]", "[SEP]", "[EOS]"] + \
                 idx2word
             word2idx = {w: i for i, w in enumerate(idx2word)}
+            
+            if word2vec and not os.path.exists(word2vec_path):
+                print("Training Word2Vec")
+                self.word2vec_model  = Word2Vec(code_vocab.sentences + annotation_vocab.sentences,
+                                                min_count = self.min_occur)  
+                self.word2vec_model.save(word2vec_path)
+            
             with open(path, 'w') as fout:
                 json.dump({"idx2word": idx2word,
                            "word2idx": word2idx}, fout)
-
+            
         else:
             with open(path, 'r') as f:
                 dictionary = json.load(f)
                 idx2word = dictionary["idx2word"]
                 word2idx = dictionary["word2idx"]
+            
+            if word2vec and os.path.exists(word2vec_path):
+                self.word2vec_model = Word2Vec.load(word2vec_path)
 
         self.idx2word = idx2word
         self.word2idx = word2idx
 
     def __len__(self):
         return len(self.idx2word)
+

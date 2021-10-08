@@ -105,6 +105,37 @@ def cell_type(funcs, nodes=None, header=None):
 
     return STAGE_PAD
 
+def multi_cell_type(funcs, nodes = None, header = None):
+    
+    grams = [t.lower() for t in header.split() if t]
+    bi_grams = ['{} {}'.format(t, grams[i + 1])
+                for i, t in enumerate(grams[:-1])]
+    
+    labels = []
+
+    if sum([1 for n in nodes if (n["type"] == 'Import' or n["type"] == 'ImportFrom')]) / len(nodes) > 0.3:
+        labels.append(IMPORT)
+
+    if any([g in bi_grams for g in ['logistic regression', 'machine learning', 'random forest']]) and len(grams) <= 3:
+        labels.append(MODEL)
+    elif any([f in funcs for f in model_funcs]):
+        labels.append(MODEL)
+
+
+    if 'cross validation' in bi_grams and len(grams) <= 3:
+        labels.append(EVALUATE)
+    elif any([f in funcs for f in evaluate_funcs]):
+        labels.append(EVALUATE)
+    
+    if any([f in funcs for f in explore_funcs]):
+        labels.append(EXPLORE)
+    elif len(nodes) == 3 and nodes[1]["type"] == "Expr":
+        labels.append(EXPLORE)
+
+    if any([f in funcs for f in wrangle_funcs]):
+        labels.append(WRANGLE)
+
+    return labels
 
 class DataReader(object):
     """
@@ -160,12 +191,14 @@ class DataReader(object):
 
 class CORALDataset(Dataset):
 
-    def __init__(self, graphs, vocab, seq_len, chunk_size=128, n_neg=5, markdown=False):
+    def __init__(self, graphs, vocab, seq_len, chunk_size=128, n_neg=5, markdown=False, weak_labeler = cell_type):
         self.vocab = vocab
         self.seq_len = seq_len
         self.chunk_size = chunk_size
         self.n_neg = n_neg
         self.markdown = markdown
+        self.weak_labeler = weak_labeler
+        self.word2vec = None
 
         if markdown:
             graphs = list(sorted(graphs, key=lambda x: len(
@@ -228,17 +261,25 @@ class CORALDataset(Dataset):
                 adj_mat[:, 2 + len(t1_label):] = 1
             adj_mat = adj_mat[:self.seq_len, :self.seq_len]
             if graph["funcs"] is not None:
-                stage = cell_type(
+                stage = self.weak_labeler(
                     graph["funcs"], nodes=graph["nodes"], header=graph["header"])
 
             else:
                 stage = int(graph["stage"])
 
+           
             output = {"bert_input": bert_input,
                       "segment_label": segment_label,
                       "adj_mat": adj_mat,
                       "stage": stage,
                       "seq_len": len(bert_input)}
+            
+            if self.word2vec:
+                print("Has word2vec!")
+                rep = []   
+                for i, key in enumerate(bert_input):
+                    rep.append(self.word2vec.wv[self.vocab.idx2word[key]])                
+                output["word2vec_embedding"] = rep
 
             return output
 
@@ -276,6 +317,7 @@ def my_collate(batch):
         segment_label = []
         adj_mat = []
         stages = []
+        word2vec_embeddings = []
 
         for item in graphs:
             item["bert_input"] += [UnitedVocab.pad_index] * \
@@ -286,16 +328,25 @@ def my_collate(batch):
             mat = np.zeros((seq_len, seq_len))
             mat[:item["adj_mat"].shape[0],
                 :item["adj_mat"].shape[1]] = item["adj_mat"]
+            
+            if "word2vec_embedding" in item:
+                item["word2vec_embedding"] += [UnitedVocab.pad_index] * \
+                (seq_len - item["seq_len"])
+                word2vec_embeddings.apppend(item["word2vec_embedding"])
 
             bert_input.append(item["bert_input"])
             segment_label.append(item["segment_label"])
             adj_mat.append(mat)
             stages.append(item["stage"])
 
-        return {"bert_input": torch.tensor(bert_input),
+        to_return =  {"bert_input": torch.tensor(bert_input),
                 "segment_label": torch.tensor(segment_label),
                 "adj_mat": torch.tensor(adj_mat),
                 "stage": torch.tensor(stages)}
+        if len(word2vec_embeddings) > 0:
+            to_return["word2vec_embeddings"] = torch.tensor(word2vec_embeddings)
+        
+        return to_return
     pos_graphs = [item[0] for item in batch]
     neg_graphs = list(itertools.chain.from_iterable(
         [item[1] for item in batch]))

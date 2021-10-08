@@ -3,13 +3,13 @@ python3 coral/__main__.py \
 	--output_path='output.model' \
 	--test_path='./examples/test.txt' \
 	--vocab_path='./output/vocab.txt' \
-	--cuda_devices='0' \
+	--cuda_devices='1' \
 	--log_freq=10000 \
 	--epochs=15 \
 	--layers=4 \
 	--attn_heads=4 \
 	--lr=0.00003 \
-	--batch_size=16 \
+	--batch_size=6 \
 	--num_workers=1 \
 	--duplicate=5 \
 	--dropout=0 \
@@ -19,5 +19,7 @@ python3 coral/__main__.py \
 	--max_graph_num=1000000 \
 	--markdown \
 	--hinge_loss_start_point=1 \
-	--entropy_start_point=6
+	--entropy_start_point=6\
+	--train_word2vec \
+	--word2vec_path="./output/word2vec.model"
 
